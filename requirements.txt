@@ -1,4 +1,6 @@
 streamlit
+pandas
 openai
-python-dotenv
+numpy
 scikit-learn
+python-dotenv

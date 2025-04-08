@@ -16,6 +16,18 @@ AzureClient = AzureOpenAI(
     api_version="2024-02-01",
     azure_endpoint=os.getenv("AZURE_END_POINT")
 )
+import requests
+from bs4 import BeautifulSoup
+
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        text = soup.get_text(separator=' ', strip=True)
+        return text[:3000]  # Limit to first 3000 characters
+    except Exception as e:
+        return f"Error extracting text: {e}"
+
 
 def fetch_text_from_csv(csv_file_path, indices):
     """Fetch text from a CSV file based on given indices."""
@@ -56,7 +68,7 @@ st.title("Assessment Finder")
 st.markdown("Find assessments that match your requirements using semantic search.")
 
 # File paths - using local files in the same directory
-csv_file_path = "SHL_assessment_final.csv"  # CSV file in the same directory
+csv_file_path = "SHL_assessment.csv"  # CSV file in the same directory
 embeddings_file_path = st.sidebar.text_input("Embeddings file path", "embeddings.npy")
 
 # Check if files exist
@@ -76,12 +88,25 @@ else:
 
 # Query and search settings
 query = st.text_area("Enter your assessment requirements", 
-                    "I am hiring for Java developers who can also collaborate effectively with my business teams. Looking for an assessment(s) that can be completed in 40 minutes.")
+                   placeholder="E.g., I'm hiring for data analysts with SQL and Excel skills. Assessment should be under 30 minutes.")
 
-top_k = st.sidebar.slider("Number of results", min_value=1, max_value=20, value=10)
+# Optional job description URL input
+st.markdown("**Or** paste a job description URL (we'll try to extract text from it):")
+job_url = st.text_input(
+    "Job Description URL (optional)", 
+    placeholder="https://example.com/job-posting"
+)
+top_k = st.sidebar.slider("Number of results", min_value=1, max_value=10, value=10)
 
 # Search button
 if st.button("Search for Assessments"):
+    
+    if job_url.strip():
+            st.info("Using job description from URL.")
+            query_to_use = extract_text_from_url(job_url)
+    else:
+        query_to_use = query
+
     if not csv_exists or not embeddings_exist:
         st.error("Please make sure both CSV and embeddings files exist in the correct location.")
     else:
@@ -91,7 +116,7 @@ if st.button("Search for Assessments"):
                 embeddings = load_embeddings(embeddings_file_path)
                 
                 # Generate query embedding
-                query_embedding = generate_embedding(query)
+                query_embedding = generate_embedding(query_to_use)
                 
                 # Retrieve similar items
                 indices = retrieve_similar(embeddings, query_embedding, top_k=top_k)

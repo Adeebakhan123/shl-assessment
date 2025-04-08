@@ -58,7 +58,7 @@ def embed_and_store(csv_file_path, embeddings_file_path):
     save_embeddings(embeddings, embeddings_file_path)
 
 if __name__ == "__main__":
-    csv_file_path = "b.csv"  # Replace with your CSV file path
+    csv_file_path = "SHL_assessment.csv"  # Replace with your CSV file path
     embeddings_file_path = "embeddings.npy"  # Replace with desired output path
     embed_and_store(csv_file_path, embeddings_file_path)
     print(f"Embeddings saved to {embeddings_file_path}")
